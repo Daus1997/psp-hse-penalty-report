@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PSP HSE Penalty Report Generator</title>
+<style>
+:root{--navy:#12375b;--blue:#1d5d8f;--light:#eef4f8;--line:#cbd5df;--text:#1d2935}
+*{box-sizing:border-box}body{margin:0;background:#f3f6f9;color:var(--text);font:14px/1.45 Arial,Helvetica,sans-serif}
+header{background:var(--navy);color:#fff;padding:20px}header>div,main{max-width:1250px;margin:auto}h1{font-size:22px;margin:0}header p{margin:4px 0 0;color:#dbe8f3}
+main{padding:16px}.notice{background:#fff4d6;border:1px solid #e7d69d;border-radius:8px;padding:10px 12px;margin-bottom:14px}
+.layout{display:grid;grid-template-columns:minmax(310px,390px) minmax(0,1fr);gap:16px;align-items:start}.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:15px;margin-bottom:14px}
+h2{font-size:17px;color:var(--navy);margin:0 0 12px}h3{font-size:14px;margin:14px 0 8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field{display:flex;flex-direction:column;gap:4px}.full{grid-column:1/-1}
+label{font-size:12px;font-weight:bold;color:#34495b}input,select,textarea{width:100%;padding:9px;border:1px solid #b9c8d5;border-radius:6px;font:inherit;background:white}select{white-space:normal;min-height:42px}.offence-preview{border:1px solid #b9c8d5;border-radius:6px;background:#f7fafc;padding:10px;white-space:normal;overflow-wrap:anywhere;line-height:1.5;min-height:48px}.offence-preview .en{display:block;font-weight:600}.offence-preview .bm{display:block;margin-top:5px;color:#455a6b}textarea{min-height:65px;resize:vertical}
+button,.btn{border:0;border-radius:6px;padding:9px 12px;background:var(--blue);color:#fff;font-weight:bold;cursor:pointer;display:inline-block}button.secondary{background:#e6edf3;color:#1b3b55}button.red{background:#b42318}.actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+small,.muted{font-size:12px;color:#647789}.tablewrap{overflow:auto}table{width:100%;border-collapse:collapse;font-size:12px}th,td{border:1px solid #c6cbd0;padding:7px;vertical-align:top;text-align:left}th{background:#e8edf1}
+#entries td img{max-width:72px;max-height:72px;object-fit:contain}.empty{text-align:center;color:#697988;padding:18px}
+#report{background:white;border:1px solid #aaa;padding:18px;overflow:auto;color:#000}
+.report-head{display:grid;grid-template-columns:90px 1fr 210px;border:1px solid #333;margin-bottom:18px}
+.logo{border-right:1px solid #333;display:flex;align-items:center;justify-content:center;padding:8px;color:#c22;font-weight:bold;font-size:24px}
+.brand{text-align:center;border-right:1px solid #333;padding:8px;font-weight:bold}.brand .name{font-size:16px}.brand .title{font-size:17px;margin-top:7px}
+.docmeta{font-size:11px}.docmeta div{padding:5px;border-bottom:1px solid #777;display:grid;grid-template-columns:95px 1fr}.docmeta div:last-child{border-bottom:0}
+.report-info{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:12px}.report-info td{border:1px solid #555;padding:6px}.report-info td:first-child{width:95px;font-weight:bold;background:#f7f7f7}
+.remarks{height:85px;vertical-align:top!important}
+.report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:12px}.report-table th,.report-table td{border:1px solid #333;padding:5px;text-align:center}.report-table th{background:#f7f7f7}.report-table .desc{width:35%;text-align:center}.report-table .sub{width:22%}.report-table .datecol{width:15%}.report-table .amount{width:15%}.report-table .no{width:6%}.evidence{width:auto;max-width:110px;max-height:105px;object-fit:contain;display:block;margin:4px auto}.caption{white-space:pre-wrap;overflow-wrap:anywhere;text-align:center}.signatures{width:100%;border-collapse:collapse;margin-top:28px;font-size:11px}.signatures td,.signatures th{border:1px solid #333;padding:6px;width:25%}.sign-space{height:65px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.report-head{grid-template-columns:65px 1fr 155px}.docmeta div{grid-template-columns:72px 1fr}}
+@page{size:A4 portrait;margin:12mm}
+@media print{
+  html,body{background:#fff!important;margin:0!important;padding:0!important;color:#000!important;font-family:Arial,Helvetica,sans-serif!important}
+  body *{visibility:hidden!important}
+  #report,#report *{visibility:visible!important}
+  header,main>.notice,.leftcol,.rightcol>.panel:first-child,footer,.actions,.muted{display:none!important}
+  main{display:block!important;padding:0!important;margin:0!important;max-width:none!important}
+  .layout{display:block!important;margin:0!important;padding:0!important}
+  .rightcol{display:block!important;margin:0!important;padding:0!important}
+  .rightcol>.panel{display:block!important;border:0!important;padding:0!important;margin:0!important;box-shadow:none!important}
+  #report{display:block!important;position:static!important;width:100%!important;border:0!important;padding:0!important;margin:0!important;overflow:visible!important;font-size:10pt!important}
+  #report .report-head{display:grid!important;grid-template-columns:70px 1fr 175px!important;margin:0 0 12px!important;break-inside:avoid!important}
+  #report .report-info,#report .report-table,#report .signatures{width:100%!important;border-collapse:collapse!important;break-inside:auto!important}
+  #report .report-table tr,#report .report-head,#report .signatures tr{break-inside:avoid!important;page-break-inside:avoid!important}
+  #report .report-table th,#report .report-table td,#report .report-info td,#report .signatures th,#report .signatures td{font-size:9pt!important;padding:5px!important}
+  #report .evidence{width:75px!important;height:65px!important;max-width:75px!important;max-height:65px!important;object-fit:contain!important}
+  #report .caption{white-space:pre-wrap!important;overflow-wrap:anywhere!important;font-size:9pt!important}
+  #report .remarks{height:65px!important}
+  button{display:none!important}
+}
+
+@page { size: A4 portrait; margin: 12mm; }
+@media print {
+  html, body { margin:0!important; padding:0!important; background:#fff!important; }
+  body * { visibility:hidden!important; }
+  #report, #report * { visibility:visible!important; }
+  header, main > .notice, .leftcol, footer, .actions, .muted { display:none!important; }
+  .layout, .rightcol, .rightcol > .panel { display:block!important; margin:0!important; padding:0!important; border:0!important; max-width:none!important; }
+  .rightcol > .panel:first-child { display:none!important; }
+  #report { display:block!important; position:static!important; width:100%!important; border:0!important; margin:0!important; padding:0!important; overflow:visible!important; }
+  #report .report-head { break-inside:avoid!important; page-break-inside:avoid!important; }
+  #report .report-table tr, #report .signatures tr { break-inside:avoid!important; page-break-inside:avoid!important; }
+  #report .evidence { width:75px!important; height:65px!important; max-width:75px!important; max-height:65px!important; object-fit:contain!important; }
+  #report .caption { white-space:pre-wrap!important; overflow-wrap:anywhere!important; }
+  button { display:none!important; }
+}
+
+</style>
+</head>
+<body>
+<header><div><h1>PEMBINAAN SEJATI PERKASA SDN BHD</h1><p>HSE Penalty Report Generator / Penjana Laporan Penalti HSE</p></div></header>
+<main>
+<div class="notice"><b>Nota penggunaan:</b> Laporan ini dibina berdasarkan contoh <i>PENALTY SUMMARY-ARENA-SEPT-2026</i> dan senarai dalam <i>MEMO 003 – Pelaksanaan Sistem Penalti HSE</i>. Rekod disimpan dalam browser/peranti ini sahaja. Untuk laporan rasmi, semak semula kadar penalti dan butiran sebelum eksport.</div>
+<div class="layout">
+<div class="leftcol">
+<section class="panel">
+<h2>1. Maklumat Laporan / Report Details</h2>
+<div class="grid">
+<div class="field full"><label>To / Kepada</label><input id="to" value="SUB-CONTRACTOR"></div>
+<div class="field"><label>From / Daripada</label><input id="from" value="PSP-HSE"></div>
+<div class="field"><label>Project / Projek</label><input id="project" value="EARTH WORK STAGE 2-EBP7-P201"></div>
+<div class="field"><label>Reference No. / No. Rujukan</label><input id="ref" placeholder="EW-S2-EBP7-P201-PEN-01-2026"></div>
+<div class="field"><label>Report Date / Tarikh Laporan</label><input id="reportDate" type="date"></div>
+<div class="field full"><label>Remarks / Catatan</label><textarea id="remarks">Please refer attachment for photo evidence</textarea></div>
+</div>
+</section>
+<section class="panel">
+<h2>2. Tambah Penalti / Add Penalty Item</h2>
+<p class="muted">Jika seorang pekerja melakukan beberapa kesalahan, tambah setiap kesalahan sebagai item berasingan dan gunakan nama pekerja yang sama. Jumlah penalti akan dikira secara automatik.</p>
+<form id="itemForm">
+<div class="grid">
+<div class="field full"><label>Offence / Jenis Kesalahan *</label><select id="offence" required></select></div>
+<div class="field"><label>Trade / Subcontractor *</label><input id="subcon" placeholder="e.g. Arena" required></div>
+<div class="field"><label>Date of Offence / Tarikh Kesalahan *</label><input id="offenceDate" type="date" required></div>
+<div class="field full"><label>Worker Name / Nama Pekerja (optional)</label><input id="workerName" placeholder="e.g. Arshad"></div>
+<div class="field full"><label>Description / Penerangan kesalahan *</label><textarea id="description" required placeholder="e.g. Not wearing steel-toe safety shoes"></textarea></div>
+<div class="field"><label>Penalty (RM) / Penalti</label><input id="amount" type="number" min="0" step=".01" required></div>
+<div class="field"><label>Photo Evidence / Gambar Bukti</label><input id="photo" type="file" accept="image/*" multiple><small>Boleh pilih beberapa gambar sekali gus.</small></div>
+</div>
+<div class="actions"><button type="submit">+ Add Item / Tambah</button><button type="button" class="secondary" onclick="clearItem()">Clear / Kosongkan</button></div>
+<p class="muted">Pilih kesalahan untuk auto-fill kadar daripada Attachment A. Kadar boleh disemak sebelum item ditambah. Gambar disimpan bersama laporan pada browser ini.</p>
+</form>
+</section>
+<section class="panel">
+<h2>3. Pengesahan / Sign-off</h2>
+<div class="grid">
+<div class="field"><label>Issued by – Name / Dikeluarkan oleh</label><input id="issuedName" value="Ahmad"></div>
+<div class="field"><label>Issued by – Position</label><input id="issuedPos" value="SSS"></div>
+<div class="field"><label>Verified by – Name / Disahkan oleh</label><input id="verifiedName" value="Firdaus"></div>
+<div class="field"><label>Verified by – Position</label><input id="verifiedPos" value="SHO"></div>
+<div class="field"><label>Acknowledge by – Name</label><input id="ackName"></div>
+<div class="field"><label>Acknowledge by – Position</label><input id="ackPos"></div>
+<div class="field"><label>Approved by – Name</label><input id="approvedName" value="Wan Azhar"></div>
+<div class="field"><label>Approved by – Position</label><input id="approvedPos" value="PM"></div>
+</div>
+<div class="actions"><button onclick="renderReport()">Update Report / Kemas Kini</button><button class="secondary" onclick="saveDraft()">Save Draft / Simpan Draf</button><button class="secondary" onclick="loadDraft()">Load Draft / Buka Draf</button></div>
+</section>
+</div>
+<div class="rightcol">
+<section class="panel">
+<h2>Item Penalti / Penalty Items</h2>
+<div class="tablewrap"><table><thead><tr><th>No.</th><th>Description</th><th>Trade/Subcon</th><th>Date</th><th>RM</th><th></th></tr></thead><tbody id="entries"><tr><td colspan="6" class="empty">Belum ada item penalti.</td></tr></tbody></table></div>
+<div class="actions"><button onclick="renderReport()">Preview Report / Pratonton</button><button onclick="exportWord()">Export Word / Muat Turun Word</button><button class="secondary" onclick="printOfficialReport()">Print Report / Save PDF</button><button class="red" onclick="clearAll()">Clear All Items</button></div>
+<p class="muted">Export Word menghasilkan fail .doc yang boleh dibuka dan diedit dalam Microsoft Word. Fungsi Print Report hanya mencetak laporan rasmi, tanpa paparan borang dan butang sistem.</p>
+</section>
+<section class="panel">
+<h2>Pratonton Laporan / Report Preview</h2>
+<div id="report"></div>
+</section>
+</div>
+</div>
+</main>
+<footer style="text-align:center;padding:16px;color:#647789;font-size:12px">PSP HSE Penalty Report Generator • Local browser prototype</footer>
+<script>
+const offences = [
+["1A","PERSONAL PROTECTION EQUIPMENT / PERALATAN PERLINDUNGAN DIRI","Fail to wear / provide Safety Helmet with SIRIM & DOSH. / Gagal memakai / menyediakan Safety Helmet dengan SIRIM & JKKP.",100,"PAX"],
+["1B","PERSONAL PROTECTION EQUIPMENT / PERALATAN PERLINDUNGAN DIRI","Fail to wear / provide Safety Vest. / Gagal memakai / menyediakan Safety Vest.",100,"PAX"],
+["1C","PERSONAL PROTECTION EQUIPMENT / PERALATAN PERLINDUNGAN DIRI","Fail to wear / provide Safety Shoes with steel toe. / Gagal memakai / menyediakan kasut keselamatan steel toe.",100,"PAX"],
+["1D","PERSONAL PROTECTION EQUIPMENT / PERALATAN PERLINDUNGAN DIRI","Fail to wear / provide face shield (Welding & Hot Work). / Gagal memakai / menyediakan pelindung muka (Welding & Hot Work).",100,"PAX"],
+["1E","PERSONAL PROTECTION EQUIPMENT / PERALATAN PERLINDUNGAN DIRI","Modification / Damage of PPE. / Pengubahsuaian / kerosakan PPE.",100,"PAX"],
+["2A","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Fail to provide / maintain barricade and signage. / Gagal menyediakan / menyelenggara papan tanda dan penghadang.",100,"PAX"],
+["2B","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Using wooden ladder for safe access and egress. / Menggunakan tangga kayu untuk akses keluar masuk.",100,"PAX"],
+["2C","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Fail to provide landslide protection. / Gagal menyediakan perlindungan daripada tanah runtuh.",200,"PAX"],
+["2D","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Stacking material near open excavation work. / Menyusun bahan berhampiran kerja korekan terbuka.",200,"OFFENCE"],
+["2E","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Failure to conduct excavation inspection before work. / Gagal menjalankan pemeriksaan pengorekan sebelum kerja dimulakan.",200,"OFFENCE"],
+["2F","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Failure to provide safe access and egress for excavation. / Gagal menyediakan laluan keluar masuk yang selamat bagi pengorekan.",100,"PAX"],
+["2G","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Failure to maintain safe excavation slope, benching or shoring. / Gagal memastikan cerun, benching atau shoring pengorekan berada dalam keadaan selamat.",300,"OFFENCE"],
+["2H","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Plant or equipment operating too close to excavation edge. / Jentera atau peralatan beroperasi terlalu hampir dengan tepi pengorekan.",300,"OFFENCE"],
+["2I","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Unauthorised entry into excavation. / Masuk ke kawasan pengorekan tanpa kebenaran.",200,"PAX"],
+["2J","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Failure to provide adequate dewatering for excavation. / Gagal menyediakan sistem dewatering yang mencukupi bagi kawasan pengorekan.",200,"OFFENCE"],
+["2K","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Failure to identify / protect underground services before excavation. / Gagal mengenal pasti / melindungi utiliti bawah tanah sebelum kerja pengorekan.",500,"OFFENCE"],
+["2L","EXCAVATION & EARTHWORK / KERJA PENGOREKAN & KERJA TANAH","Spoil / material placed too close to excavation edge. / Tanah korekan / bahan diletakkan terlalu hampir dengan tepi pengorekan.",200,"OFFENCE"],
+["3A","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Operating machinery without authorised / competent operator. / Mengendalikan jentera tanpa operator yang diberi kuasa / kompeten.",500,"OFFENCE"],
+["3B","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Failure to provide banksman / flagman during reversing or manoeuvring. / Gagal menyediakan banksman / flagman semasa mengundur atau menggerakkan jentera.",200,"OFFENCE"],
+["3C","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Using handphone while driving lorry / truck / machinery during work on site. / Menggunakan telefon bimbit ketika memandu lori / truck / jentera ketika melakukan kerja di tapak.",500,"PAX"],
+["3D","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Carrying passengers on machinery not designed for passenger transportation. / Membawa penumpang menggunakan jentera yang tidak direka untuk membawa penumpang.",500,"OFFENCE"],
+["3E","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Standing or working within machinery swing radius. / Berdiri atau bekerja dalam kawasan swing radius jentera.",200,"PAX"],
+["3F","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Working under suspended load or raised excavator bucket. / Bekerja di bawah beban tergantung atau bucket excavator yang terangkat.",500,"OFFENCE"],
+["3G","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Failure to maintain machinery safety devices, reverse alarm or beacon. / Gagal memastikan peranti keselamatan, reverse alarm atau beacon jentera berfungsi.",200,"OFFENCE"],
+["3H","HEAVY MACHINERY OPERATION / OPERASI JENTERA BERAT","Parking machinery on unsafe slope or near excavation edge. / Meletakkan jentera di cerun tidak selamat atau terlalu hampir dengan tepi pengorekan.",300,"OFFENCE"],
+["4A","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Failure to provide / maintain safe haul road. / Gagal menyediakan / menyelenggara laluan jentera yang selamat.",200,"OFFENCE"],
+["4B","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Failure to provide adequate edge protection / berm along haul road. / Gagal menyediakan perlindungan tepi / berm yang mencukupi di laluan jentera.",300,"OFFENCE"],
+["4C","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Speeding or failure to comply with site speed limit. / Memandu melebihi had laju atau gagal mematuhi had laju tapak.",200,"OFFENCE"],
+["4D","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Overloading dump truck. / Membawa muatan melebihi kapasiti dump truck.",300,"OFFENCE"],
+["4E","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Failure to cover loaded lorry / dump truck where required. / Gagal menutup muatan lori / dump truck apabila diperlukan.",100,"OFFENCE"],
+["4F","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Failure to control dust from earthwork activities. / Gagal mengawal habuk daripada aktiviti earthwork.",200,"OFFENCE"],
+["4G","HAUL ROAD & DUMP TRUCK / LALUAN JENTERA & DUMP TRUCK","Failure to provide wheel washing / cleaning where required. / Gagal menyediakan pembersihan tayar apabila diperlukan.",200,"OFFENCE"],
+["5A","TRAFFIC MANAGEMENT / PENGURUSAN TRAFIK","Failure to follow traffic management plan. / Gagal mematuhi pelan pengurusan trafik.",200,"OFFENCE"],
+["5B","TRAFFIC MANAGEMENT / PENGURUSAN TRAFIK","Failure to provide traffic signage / cones / barricade. / Gagal menyediakan papan tanda trafik / kon / penghadang.",100,"OFFENCE"],
+["5C","TRAFFIC MANAGEMENT / PENGURUSAN TRAFIK","Reversing without proper warning / control. / Mengundur tanpa kawalan atau amaran yang sesuai.",200,"OFFENCE"],
+["5D","TRAFFIC MANAGEMENT / PENGURUSAN TRAFIK","Parking heavy vehicle at unauthorised location. / Meletakkan kenderaan berat di lokasi yang tidak dibenarkan.",200,"OFFENCE"],
+["6A","HOT WORK / KERJA PANAS","Fail to provide Fire Extinguisher. / Gagal menyediakan Alat Pemadam Api.",100,"PAX"],
+["6B","HOT WORK / KERJA PANAS","Fail to install flashback arrestor to Oxygen / Acetylene gas cylinder. / Gagal memasang flashback arrestor pada silinder gas Oxygen / Acetylene.",100,"OFFENCE"],
+["6C","HOT WORK / KERJA PANAS","Fail to keep Oxygen / Acetylene gas cylinder vertical and secured against falling. / Gagal memastikan silinder oksigen / gas Acetylene menegak dan selamat daripada jatuh.",100,"OFFENCE"],
+["7A","WORKING AT HEIGHT (>2M) / KERJA DI TEMPAT TINGGI (>2M)","Fail to provide / maintain hard barricade. / Gagal menyediakan / menyelenggara penghadang.",100,"PAX"],
+["7B","WORKING AT HEIGHT (>2M) / KERJA DI TEMPAT TINGGI (>2M)","Fail to wear / provide full body harness with SIRIM & DOSH when working at height more than 2M. / Gagal memakai / menyediakan full body harness dengan SIRIM & DOSH ketika bekerja melebihi 2M.",200,"PAX"],
+["7C","WORKING AT HEIGHT (>2M) / KERJA DI TEMPAT TINGGI (>2M)","Stack material or tools at open edge. / Menyusun bahan atau peralatan di tepian terbuka.",200,"OFFENCE"],
+["7D","WORKING AT HEIGHT (>2M) / KERJA DI TEMPAT TINGGI (>2M)","Improper material for access (wooden ladder / broken steel ladder). / Menggunakan akses yang tidak sesuai (wooden ladder / broken steel ladder).",200,"PAX"],
+["8A","ENVIRONMENT / ALAM SEKITAR","Oil spillage on the ground. / Tumpahan minyak di atas tanah.",500,"OFFENCE"],
+["8B","ENVIRONMENT / ALAM SEKITAR","Improper chemical storage / container. / Penyimpanan / bekas bahan kimia yang tidak betul.",100,"OFFENCE"],
+["8C","ENVIRONMENT / ALAM SEKITAR","Poor handling of scheduled waste (used oil filter, contaminated glove/cloth/rag, spent lubricating oil, spent hydraulic oil, contaminated soil, contaminated container). / Pengendalian buangan terjadual yang tidak betul.",1000,"OFFENCE"],
+["8D","ENVIRONMENT / ALAM SEKITAR","Machinery servicing without secondary containment (drip tray). / Kerja penyelenggaraan jentera tanpa secondary containment (drip tray).",500,"OFFENCE"],
+["8E","ENVIRONMENT / ALAM SEKITAR","Failure to provide spill kits at skid tank or any storage area with potential for spillage. / Gagal menyediakan spill kit di skid tank atau kawasan simpanan yang berpotensi berlaku tumpahan.",200,"OFFENCE"],
+["8F","ENVIRONMENT / ALAM SEKITAR","Polluting rivers or causing blockage of river waterways. / Mencemarkan sungai atau menyebabkan halangan kepada laluan air sungai.",1000,"OFFENCE"],
+["8G","ENVIRONMENT / ALAM SEKITAR","Failure to notify the generator set to DOE. / Gagal memaklumkan generator set kepada JAS (DOE).",500,"OFFENCE"],
+["8H","ENVIRONMENT / ALAM SEKITAR","Air pollution due to failure to properly service / maintain machinery. / Pencemaran udara akibat kegagalan menjalankan penyelenggaraan / servis jentera dengan baik.",500,"OFFENCE"],
+["8I","ENVIRONMENT / ALAM SEKITAR","Open burning. / Pembakaran terbuka.",1000,"OFFENCE"],
+["8J","ENVIRONMENT / ALAM SEKITAR","Poor housekeeping (domestic waste & construction waste) at active working area. / Kekemasan tidak memuaskan (sisa domestik & sisa pembinaan) di kawasan kerja aktif.",100,"OFFENCE"],
+["8K","ENVIRONMENT / ALAM SEKITAR","Defecate or urinate not in proper place. / Membuang air besar atau kecil di tempat yang tidak dibenarkan.",50,"OFFENCE"],
+["9A","OTHERS / LAIN-LAIN","Failed to attend toolbox talk meeting. / Gagal menghadiri taklimat keselamatan.",50,"PAX"],
+["9B","OTHERS / LAIN-LAIN","Failed to follow / comply with all instructions related to safety, health and welfare. / Gagal mematuhi arahan berkaitan keselamatan, kesihatan dan kebajikan.",500,"OFFENCE"],
+["9C","OTHERS / LAIN-LAIN","Poor housekeeping at store area / working station. / Kekemasan tidak memuaskan di kawasan stor / tempat kerja.",100,"OFFENCE"],
+["9D","OTHERS / LAIN-LAIN","Using machinery as transportation for workers. / Menggunakan jentera sebagai pengangkutan pekerja.",500,"OFFENCE"],
+["9E","OTHERS / LAIN-LAIN","High risk work without a valid Permit To Work (PTW). / Melakukan kerja berisiko tanpa Permit Kerja (PTW) yang sah.",500,"OFFENCE"]
+];
+let items=[]; const $=id=>document.getElementById(id);
+function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function today(){let d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+function fmtDate(s){if(!s)return "";let [y,m,d]=s.split("-");return `${d}.${m}.${y}`}
+function money(n){return Number(n||0).toLocaleString("en-MY",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function updateOffencePreview(){const o=offences[+$("offence").value];if(!o){$("offencePreview").textContent="";return}const parts=o[2].split(" / ");$("offencePreview").innerHTML=`<span class="en">${esc(parts[0]||o[2])}</span>${parts.length>1?`<span class="bm">${esc(parts.slice(1).join(" / "))}</span>`:""}`}
+function fillOffences(){ $("offence").innerHTML=offences.map((o,i)=>`<option value="${i}">${esc(o[0]+" | "+o[2])} — RM${o[3]}</option>`).join("");$("offence").addEventListener("change",()=>{$("amount").value=offences[+$("offence").value][3];updateOffencePreview()});$("amount").value=offences[0][3];updateOffencePreview()}
+function clearItem(){$("itemForm").reset();$("amount").value=offences[+$("offence").value]?.[3]||100}
+$("itemForm").addEventListener("submit",e=>{e.preventDefault();const o=offences[+$("offence").value];const files=Array.from($("photo").files||[]);const item={code:o[0],category:o[1],offence:o[2],defaultRate:o[3],basis:o[4],subcon:$("subcon").value.trim(),date:$("offenceDate").value,workerName:$("workerName").value.trim(),description:$("description").value.trim(),amount:Number($("amount").value||0),photos:[]};const add=()=>{items.push(item);renderItems();renderReport();clearItem()};if(files.length){Promise.all(files.map(file=>new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=reject;reader.readAsDataURL(file)}))).then(data=>{item.photos=data;add()}).catch(()=>alert("Ada gambar yang gagal dimuatkan. Cuba pilih semula."))}else add()});
+function renderItems(){const body=$("entries");if(!items.length){body.innerHTML='<tr><td colspan="6" class="empty">Belum ada item penalti.</td></tr>';return}body.innerHTML=items.map((x,i)=>`<tr><td>${i+1}</td><td>${x.workerName?'<b>'+esc(x.workerName)+'</b><br>':''}${esc(x.description)}<br><small>${esc(x.offence)}</small>${(x.photos?.length||(x.photo?1:0))?`<br><small>${x.photos?.length||1} photo(s) attached</small>`:''}</td><td>${esc(x.subcon)}</td><td>${fmtDate(x.date)}</td><td>${money(x.amount)}</td><td><button class="red" onclick="removeItem(${i})">×</button></td></tr>`).join("")}
+function removeItem(i){items.splice(i,1);renderItems();renderReport()}
+function val(id){return $(id).value.trim()}
+function renderReport(){const project=val("project"), ref=val("ref"), reportDate=fmtDate(val("reportDate"));let total=items.reduce((a,x)=>a+Number(x.amount||0),0);
+let rows=items.map((x,i)=>`<tr><td>${i+1}</td><td class="desc">${(x.photos|| (x.photo?[x.photo]:[])).map(src=>`<img class="evidence" src="${src}">`).join("")}<div class="caption">${x.workerName?'<b>'+esc(x.workerName)+'</b>\n':''}${esc(x.offence)}\n${esc(x.description)}</div></td><td class="sub">${esc(x.subcon)}</td><td class="datecol">${fmtDate(x.date)}</td><td class="amount">RM ${money(x.amount)}</td></tr>`).join("");
+$("report").innerHTML=`<div class="report-head"><div class="logo">PSP</div><div class="brand"><div class="name">PEMBINAAN SEJATI PERKASA SDN BHD</div><div class="title">HSE PENALTY</div></div><div class="docmeta"><div><span>Document No.</span><b>HSE-F040-PEN</b></div><div><span>Revision No.</span><b>0</b></div><div><span>Effective Date</span><b>01/10/2024</b></div><div><span>Page No.</span><b>1 of 1</b></div></div></div>
+<table class="report-info"><tr><td>TO:</td><td>${esc(val("to"))}</td></tr><tr><td>FROM:</td><td>${esc(val("from"))}</td></tr><tr><td>PROJECT:</td><td>${esc(project)}</td></tr><tr><td>REF NO.:</td><td>${esc(ref)}</td></tr><tr><td>DATE:</td><td>${esc(reportDate)}</td></tr><tr><td class="remarks">REMARKS:</td><td class="remarks">${esc(val("remarks"))}</td></tr></table>
+<table class="report-table"><thead><tr><th class="no">NO</th><th class="desc">DESCRIPTION / PHOTO</th><th class="sub">TRADE / SUBCON</th><th class="datecol">DATE</th><th class="amount">PENALTY (RM)</th></tr></thead><tbody>${rows||'<tr><td colspan="5" style="height:80px">Add penalty items to generate report.</td></tr>'}</tbody><tfoot><tr><td colspan="4" style="text-align:right;font-weight:bold">TOTAL PENALTY / JUMLAH PENALTI</td><td style="font-weight:bold">RM ${money(total)}</td></tr></tfoot></table>
+<table class="signatures"><tr><th>Issued by:</th><th>Verified by:</th><th>Acknowledge by:</th><th>Approved by:</th></tr><tr><td class="sign-space"></td><td class="sign-space"></td><td class="sign-space"></td><td class="sign-space"></td></tr><tr><td>Name: ${esc(val("issuedName"))}<br>Position: ${esc(val("issuedPos"))}<br>Date: __________</td><td>Name: ${esc(val("verifiedName"))}<br>Position: ${esc(val("verifiedPos"))}<br>Date: __________</td><td>Name: ${esc(val("ackName"))}<br>Position: ${esc(val("ackPos"))}<br>Date: __________</td><td>Name: ${esc(val("approvedName"))}<br>Position: ${esc(val("approvedPos"))}<br>Date: __________</td></tr></table>`;
+}
+function reportHtml(){
+ const border='border:1px solid #333;border-collapse:collapse;';
+ const cell='border:1px solid #333;padding:5px;vertical-align:top;font-family:Arial,sans-serif;font-size:10pt;';
+ const rows=items.map((x,i)=>`<tr><td style="${cell}text-align:center;width:5%">${i+1}</td><td style="${cell}text-align:center;width:35%">${x.photo?`<div><img src="${x.photo}" width="105" height="100" style="width:105px;height:100px;max-width:105px;max-height:100px;object-fit:contain;"></div>`:''}<div>${esc(x.offence.split(" / ")[0])}<br>${esc(x.description)}</div></td><td style="${cell}text-align:center;width:22%">${esc(x.subcon)}</td><td style="${cell}text-align:center;width:15%">${fmtDate(x.date)}</td><td style="${cell}text-align:center;width:15%">RM ${money(x.amount)}</td></tr>`).join('');
+ const total=items.reduce((a,x)=>a+Number(x.amount||0),0);
+ const sign=(title,name,pos)=>`<td style="${cell}width:25%"><b>${title}</b><div style="height:55px">&nbsp;</div>Name: ${esc(name)}<br>Position: ${esc(pos)}<br>Date: __________</td>`;
+ return `<!doctype html><html><head><meta charset="utf-8"><style>@page{size:A4;margin:1.3cm}body{font-family:Arial,sans-serif;font-size:10pt;color:#000}table{border-collapse:collapse;table-layout:fixed;width:100%}td,th{overflow-wrap:break-word}p{margin:5px 0}</style></head><body>
+ <table style="${border}margin-bottom:14px"><tr><td style="${cell}width:12%;text-align:center;color:#c22;font-size:22pt;font-weight:bold;vertical-align:middle">PSP</td><td style="${cell}width:55%;text-align:center;vertical-align:middle"><b>PEMBINAAN SEJATI PERKASA SDN BHD</b><br><br><b style="font-size:15pt">HSE PENALTY</b></td><td style="${cell}width:33%;font-size:8pt">Document No.: HSE-F040-PEN<br>Revision No.: 0<br>Effective Date: 01/10/2024<br>Page No.: 1 of 1</td></tr></table>
+ <table style="${border}margin-bottom:20px">${[['TO:',val('to')],['FROM:',val('from')],['PROJECT:',val('project')],['REF NO.:',val('ref')],['DATE:',fmtDate(val('reportDate'))]].map(r=>`<tr><td style="${cell}width:16%;background:#f5f5f5"><b>${esc(r[0])}</b></td><td style="${cell}">${esc(r[1])}</td></tr>`).join('')}<tr><td style="${cell}height:65px;vertical-align:top"><b>REMARKS:</b></td><td style="${cell}height:65px;vertical-align:top">${esc(val('remarks'))}</td></tr></table>
+ <table><thead><tr>${[['NO',5],['DESCRIPTION / PHOTO',35],['TRADE / SUBCON',22],['DATE',15],['PENALTY (RM)',15]].map(([t,w])=>`<th style="${cell}background:#eee;text-align:center;width:${w}%">${t}</th>`).join('')}</tr></thead><tbody>${rows||`<tr><td colspan="5" style="${cell}height:50px;text-align:center">No penalty items</td></tr>`}</tbody><tfoot><tr><td colspan="4" style="${cell}text-align:right"><b>TOTAL PENALTY / JUMLAH PENALTI</b></td><td style="${cell}text-align:center"><b>RM ${money(total)}</b></td></tr></tfoot></table>
+ <table style="margin-top:24px"><tr>${sign('Issued by:',val('issuedName'),val('issuedPos'))}${sign('Verified by:',val('verifiedName'),val('verifiedPos'))}${sign('Acknowledge by:',val('ackName'),val('ackPos'))}${sign('Approved by:',val('approvedName'),val('approvedPos'))}</tr></table></body></html>`;
+}
+function exportWord(){if(!items.length&&!confirm("Tiada item dalam laporan. Teruskan eksport?"))return;const html=reportHtml();const blob=new Blob(["\ufeff",html],{type:"application/msword"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=(val("ref")||"PSP-HSE-Penalty-Report").replace(/[^\w-]+/g,"_")+".doc";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+
+function printOfficialReport(){
+  renderReport();
+  const report = $("report").innerHTML;
+  const win = window.open("", "_blank", "width=1000,height=800");
+  if(!win){ alert("Browser blocked the print window. Allow pop-ups for this file, then try again."); return; }
+  win.document.open();
+  win.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>HSE Penalty Report</title>
+  <style>
+    @page{size:A4 portrait;margin:12mm}
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:#fff;color:#000;font:10pt Arial,Helvetica,sans-serif}
+    #report{width:100%;border:0;padding:0;margin:0;overflow:visible}
+    .report-head{display:grid;grid-template-columns:70px 1fr 175px;border:1px solid #333;margin-bottom:14px;break-inside:avoid;page-break-inside:avoid}
+    .logo{border-right:1px solid #333;display:flex;align-items:center;justify-content:center;padding:8px;color:#c22;font-weight:bold;font-size:22px}
+    .brand{text-align:center;border-right:1px solid #333;padding:7px;font-weight:bold}.brand .name{font-size:13px}.brand .title{font-size:15px;margin-top:6px}
+    .docmeta{font-size:9px}.docmeta div{padding:4px;border-bottom:1px solid #777;display:grid;grid-template-columns:85px 1fr}.docmeta div:last-child{border-bottom:0}
+    .report-info{width:100%;border-collapse:collapse;margin-bottom:20px;font-size:10px}.report-info td{border:1px solid #555;padding:5px}.report-info td:first-child{width:85px;font-weight:bold;background:#f7f7f7}
+    .remarks{height:70px;vertical-align:top!important}
+    .report-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10px}
+    .report-table th,.report-table td{border:1px solid #333;padding:5px;text-align:center;vertical-align:top;overflow-wrap:anywhere}
+    .report-table th{background:#f7f7f7}.report-table .desc{width:35%;text-align:center}.report-table .sub{width:22%}.report-table .datecol{width:15%}.report-table .amount{width:15%}.report-table .no{width:6%}
+    .evidence{width:72px;height:62px;max-width:72px;max-height:62px;object-fit:contain;display:inline-block;vertical-align:top;margin:3px}
+    .caption{white-space:pre-wrap;overflow-wrap:anywhere;text-align:center;font-size:9px}
+    .signatures{width:100%;border-collapse:collapse;margin-top:25px;font-size:9px}.signatures td,.signatures th{border:1px solid #333;padding:5px;width:25%;vertical-align:top}.sign-space{height:55px}
+    tr{break-inside:avoid;page-break-inside:avoid}
+  </style></head><body><div id="report">${report}</div>
+  <script>window.onload=function(){setTimeout(function(){window.focus();window.print();},250)};<\/script></body></html>`);
+  win.document.close();
+}
+
+function saveDraft(){const d={meta:{to:val("to"),from:val("from"),project:val("project"),ref:val("ref"),reportDate:val("reportDate"),remarks:val("remarks"),issuedName:val("issuedName"),issuedPos:val("issuedPos"),verifiedName:val("verifiedName"),verifiedPos:val("verifiedPos"),ackName:val("ackName"),ackPos:val("ackPos"),approvedName:val("approvedName"),approvedPos:val("approvedPos")},items};localStorage.setItem("pspPenaltyReportDraft",JSON.stringify(d));alert("Draf disimpan pada browser/peranti ini.")}
+function loadDraft(){try{const d=JSON.parse(localStorage.getItem("pspPenaltyReportDraft")||"null");if(!d){alert("Tiada draf disimpan.");return}Object.entries(d.meta||{}).forEach(([k,v])=>{if($(k))$(k).value=v});items=d.items||[];renderItems();renderReport();alert("Draf dimuatkan.")}catch(e){alert("Draf tidak dapat dibuka.")}}
+function clearAll(){if(confirm("Padam semua item penalti dalam laporan semasa?")){items=[];renderItems();renderReport()}}
+["to","from","project","ref","reportDate","remarks","issuedName","issuedPos","verifiedName","verifiedPos","ackName","ackPos","approvedName","approvedPos"].forEach(id=>$(id).addEventListener("input",()=>{}));
+$("reportDate").value=today();$("offenceDate").value=today();$("ref").value=`EW-S2-EBP7-P201-PEN-${String(new Date().getMonth()+1).padStart(2,"0")}-${new Date().getFullYear()}`;
+fillOffences();renderItems();renderReport();
+</script>
+</body></html>
